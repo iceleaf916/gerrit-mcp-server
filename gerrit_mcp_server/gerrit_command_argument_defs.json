@@ -197,7 +197,7 @@
       },
       "comments": {
         "type": "array",
-        "description": "An array of comment objects, each containing file_path, line_number, and message.",
+        "description": "An array of file-level comment objects. Each comment is associated with a specific file and line.",
         "items": {
           "type": "object",
           "properties": {
@@ -219,7 +219,7 @@
       },
       "message": {
         "type": "string",
-        "description": "A top-level message for the review (e.g., 'LGTM').",
+        "description": "A CL-level comment that applies to the entire change (e.g., 'LGTM', 'Please fix the style issues').",
         "required": false
       },
       "labels": {

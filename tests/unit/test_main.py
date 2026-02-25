@@ -178,36 +178,28 @@ async def test_get_bugs_from_cl_no_commit_message(mock_run_curl):
     assert "No commit message found" in result[0]["text"]
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("unresolved_arg, expected_unresolved", [
-    (None, True),   # Default
-    (False, False),
-    (True, True),
-])
-async def test_post_review_comment(mock_run_curl, unresolved_arg, expected_unresolved):
-    """Tests posting a review comment with different 'unresolved' states."""
+async def test_post_review_comment(mock_run_curl):
+    """Tests posting a review comment with comments array."""
     mock_run_curl.return_value = '{"comments": {}}'
-    
-    kwargs = {}
-    if unresolved_arg is not None:
-        kwargs["unresolved"] = unresolved_arg
 
-    result = await main.post_review_comment("123", "file.py", 10, "test comment", **kwargs)
-    
-    assert "Successfully posted comment" in result[0]["text"]
-    
+    result = await main.post_review_comment("123", comments=[{"file_path": "file.py", "line_number": 10, "message": "test comment"}])
+
+    assert "Successfully posted review" in result[0]["text"]
+
     # Verify the payload
     args, _ = mock_run_curl.call_args
     curl_args = args[0]
     data_index = curl_args.index("--data")
     request_body = json.loads(curl_args[data_index + 1])
-    assert request_body["comments"]["file.py"][0]["unresolved"] is expected_unresolved
+    assert request_body["comments"]["file.py"][0]["line"] == 10
+    assert request_body["comments"]["file.py"][0]["message"] == "test comment"
 
 @pytest.mark.asyncio
 async def test_post_review_comment_failure(mock_run_curl):
     """Tests handling of a failure response when posting a comment."""
     mock_run_curl.return_value = '{"error": "failed"}'
-    result = await main.post_review_comment("123", "file.py", 10, "test comment")
-    assert "Failed to post comment" in result[0]["text"]
+    result = await main.post_review_comment("123", comments=[{"file_path": "file.py", "line_number": 10, "message": "test comment"}])
+    assert "Failed to post review" in result[0]["text"]
 
 # --- Edge Case Tests ---
 

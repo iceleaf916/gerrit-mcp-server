@@ -1156,7 +1156,8 @@ async def post_review_comment(
     gerrit_base_url: Optional[str] = None,
 ):
     """
-    Posts a review comment on a specific line of a file in a CL.
+    Posts a review comment on a CL. Supports file-level comments (via comments array)
+    and CL-level comments (via message), as well as labels.
     """
     from collections import defaultdict
 
