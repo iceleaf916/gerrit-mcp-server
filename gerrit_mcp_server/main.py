@@ -1150,35 +1150,41 @@ async def get_bugs_from_cl(
 @mcp.tool()
 async def post_review_comment(
     change_id: str,
-    file_path: str,
-    line_number: int,
-    message: str,
-    unresolved: bool = True,
-    gerrit_base_url: Optional[str] = None,
+    comments: Optional[List[Dict[str, Any]]] = None,
+    message: Optional[str] = None,
     labels: Optional[Dict[str, int]] = None,
+    gerrit_base_url: Optional[str] = None,
 ):
     """
     Posts a review comment on a specific line of a file in a CL.
     """
+    from collections import defaultdict
+
+    # Business validation: labels, comments, and message cannot all be empty
+    if not labels and not comments and not message:
+        raise ValueError("labels, comments, and message cannot all be empty")
+
     config = load_gerrit_config()
     gerrit_hosts = config.get("gerrit_hosts", [])
     base_url = _normalize_gerrit_url(_get_gerrit_base_url(gerrit_base_url), gerrit_hosts)
     url = f"{base_url}/changes/{change_id}/revisions/current/review"
 
-    payload = {
-        "comments": {
-            file_path: [
-                {
-                    "line": line_number,
-                    "message": message,
-                    "unresolved": unresolved,
-                }
-            ]
-        },
-    }
+    payload = {}
+    if comments:
+        comments_by_file = defaultdict(list)
+        for comment in comments:
+            comments_by_file[comment["file_path"]].append({
+                "line": comment["line_number"],
+                "message": comment["message"],
+            })
+        payload["comments"] = dict(comments_by_file)
+
+    if message:
+        payload["message"] = message
+
     if labels:
         payload["labels"] = labels
-    
+
     args = _create_post_args(url, payload)
 
     try:
@@ -1188,14 +1194,14 @@ async def post_review_comment(
             return [
                 {
                     "type": "text",
-                    "text": f"Successfully posted comment to CL {change_id} on file {file_path} at line {line_number}.",
+                    "text": f"Successfully posted review to CL {change_id}.",
                 }
             ]
         else:
             return [
                 {
                     "type": "text",
-                    "text": f"Failed to post comment. Response: {result_str}",
+                    "text": f"Failed to post review. Response: {result_str}",
                 }
             ]
     except Exception as e:

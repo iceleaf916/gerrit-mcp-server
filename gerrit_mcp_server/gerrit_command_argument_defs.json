@@ -183,7 +183,7 @@
     }
   },
   "post_review_comment": {
-    "description": "Posts a review comment on a specific line of a file in a CL.",
+    "description": "Posts a review comment on one or more files in a CL. At least one of labels, comments, or message must be provided.",
     "parameters": {
       "gerrit_base_url": {
         "type": "string",
@@ -195,24 +195,37 @@
         "description": "The numeric change ID.",
         "required": true
       },
-      "file_path": {
-        "type": "string",
-        "description": "The full path of the file to comment on.",
-        "required": true
-      },
-      "line_number": {
-        "type": "number",
-        "description": "The line number to post the comment on.",
-        "required": true
+      "comments": {
+        "type": "array",
+        "description": "An array of comment objects, each containing file_path, line_number, and message.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "file_path": {
+              "type": "string",
+              "description": "The full path of the file to comment on."
+            },
+            "line_number": {
+              "type": "number",
+              "description": "The line number to post the comment on."
+            },
+            "message": {
+              "type": "string",
+              "description": "The content of the comment."
+            }
+          }
+        },
+        "required": false
       },
       "message": {
         "type": "string",
-        "description": "The content of the comment.",
-        "required": true
+        "description": "A top-level message for the review (e.g., 'LGTM').",
+        "required": false
       },
       "labels": {
         "type": "object",
-        "description": "A dictionary of labels to apply to the review (e.g., {'Verified': 1})."
+        "description": "A dictionary of labels to apply to the review (e.g., {'Verified': 1}).",
+        "required": false
       }
     }
   }

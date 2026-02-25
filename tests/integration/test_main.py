@@ -485,24 +485,21 @@ async def test_post_review_comment_with_labels(mock_run_curl):
     result = await main.post_review_comment(
         gerrit_base_url="https://fuchsia-review.googlesource.com",
         change_id="123",
-        file_path="/COMMIT_MSG",
-        line_number=1,
-        message="Setting Verified to +1",
+        comments=[{"file_path": "/COMMIT_MSG", "line_number": 1, "message": "Setting Verified to +1"}],
         labels={"Verified": 1}
     )
-    assert "Successfully posted comment" in result[0]["text"]
+    assert "Successfully posted review" in result[0]["text"]
     
     # Verify the JSON payload sent to Gerrit
     expected_payload = {
         "comments": {
             "/COMMIT_MSG": [{
                 "line": 1,
-                "message": "Setting Verified to +1",
-                "unresolved": True
+                "message": "Setting Verified to +1"
             }]
         },
         "labels": {"Verified": 1}
-    }    
+    }
     # The payload is passed as the argument after '--data'
     curl_args = mock_run_curl.call_args[0][0]
     data_index = curl_args.index("--data")
