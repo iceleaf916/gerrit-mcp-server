@@ -25,9 +25,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/google/gerrit-mcp-server"
-Repository = "https://github.com/google/gerrit-mcp-server"
-Issues = "https://github.com/google/gerrit-mcp-server/issues"
+Homepage = "https://github.com/iceleaf916/gerrit-mcp-server"
+Repository = "https://github.com/iceleaf916/gerrit-mcp-server"
+Issues = "https://github.com/iceleaf916/gerrit-mcp-server/issues"
 
 [project.scripts]
 gerrit-mcp-server = "gerrit_mcp_server.main:cli_main"

@@ -1,5 +1,9 @@
 # 🐍 Gerrit MCP Server
 
+[![PyPI version](https://badge.fury.io/py/gerrit-mcp-server.svg)](https://pypi.org/project/gerrit-mcp-server/)
+[![Python Version](https://img.shields.io/pypi/pyversions/gerrit-mcp-server)](https://pypi.org/project/gerrit-mcp-server/)
+[![License](https://img.shields.io/pypi/l/gerrit-mcp-server)](https://github.com/iceleaf916/gerrit-mcp-server)
+
 一个用于与 Gerrit 代码审查系统交互的 MCP（Model Context Protocol）服务器。该服务器允许语言模型（如 Gemini）通过执行针对 Gerrit REST API 的 `curl` 命令来查询变更、检索详细信息和管理评审。
 
 该服务器可以作为持久的 **HTTP 服务器**运行，也可以通过 **STDIO**按需运行。

@@ -1,5 +1,9 @@
 # 🐍 Gerrit MCP Server
 
+[![PyPI version](https://badge.fury.io/py/gerrit-mcp-server.svg)](https://pypi.org/project/gerrit-mcp-server/)
+[![Python Version](https://img.shields.io/pypi/pyversions/gerrit-mcp-server)](https://pypi.org/project/gerrit-mcp-server/)
+[![License](https://img.shields.io/pypi/l/gerrit-mcp-server)](https://github.com/iceleaf916/gerrit-mcp-server)
+
 An MCP (Model Context Protocol) server for interacting with the Gerrit code
 review system. This server allows a language model like Gemini to query changes,
 retrieve details, and manage reviews by executing `curl` commands against the
