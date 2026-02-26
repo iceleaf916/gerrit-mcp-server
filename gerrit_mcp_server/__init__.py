@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 """Gerrit MCP Server - An MCP server for interacting with Gerrit code review systems."""
 
-__version__ = "1.0.1"
+__version__ = "1.0.7"
 __all__ = ["__version__", "cli_main"]
 
 from .main import cli_main  # noqa: F401
