@@ -1,13 +1,36 @@
 [project]
 name = "gerrit-mcp-server"
-version = "1.0.0"
+version = "1.0.6"
 description = "An MCP server for interacting with Gerrit via curl"
+readme = "README.md"
 requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [
+    {name = "Google LLC"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Version Control",
+]
+keywords = ["gerrit", "mcp", "code-review", "model-context-protocol"]
 dependencies = [
     "mcp",
     "uvicorn",
     "websockets"
 ]
+
+[project.urls]
+Homepage = "https://github.com/google/gerrit-mcp-server"
+Repository = "https://github.com/google/gerrit-mcp-server"
+Issues = "https://github.com/google/gerrit-mcp-server/issues"
+
+[project.scripts]
+gerrit-mcp-server = "gerrit_mcp_server.main:cli_main"
 
 [project.optional-dependencies]
 dev = [
@@ -23,6 +46,10 @@ addopts = "--asyncio-mode=auto -v --ignore=tests/e2e"
 env = [
     "GERRIT_CONFIG_PATH=tests/test_config.json"
 ]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["gerrit_mcp_server"]

@@ -38,21 +38,53 @@ CONFIG_FILE_PATH = PKG_PATH / "gerrit_config.json"
 
 
 def load_gerrit_config() -> Dict[str, Any]:
-    """Loads the Gerrit configuration from the JSON file."""
+    """Loads the Gerrit configuration from the JSON file.
+    
+    Search order (first found wins):
+    1. Environment variable GERRIT_CONFIG_PATH
+    2. Current directory: ./gerrit_config.json
+    3. User config directory: ~/.config/gerrit_config.json
+    4. Package default: gerrit_mcp_server/gerrit_config.json
+    """
+    config_path = None
+    
+    # 1. Check environment variable
     config_path_str = os.environ.get("GERRIT_CONFIG_PATH")
     if config_path_str:
         config_path = Path(config_path_str)
-    else:
-        config_path = CONFIG_FILE_PATH
-
-    if not config_path.exists():
+        if config_path.exists():
+            return _load_and_validate_config(config_path)
         raise FileNotFoundError(
-            f"Configuration file not found at {config_path}. "
-            "Please create this file to proceed. You can copy "
-            "'gerrit_mcp_server/gerrit_config.sample.json' to "
-            "'gerrit_mcp_server/gerrit_config.json' as a starting point. "
-            "Refer to the README.md for more details on the configuration options."
+            f"Configuration file specified by GERRIT_CONFIG_PATH not found: {config_path}"
         )
+    
+    # 2. Check current directory
+    config_path = Path.cwd() / "gerrit_config.json"
+    if config_path.exists():
+        return _load_and_validate_config(config_path)
+    
+    # 3. Check user config directory (XDG-compliant)
+    config_path = Path.home() / ".config" / "gerrit_config.json"
+    
+    # 4. Fall back to package default
+    config_path = CONFIG_FILE_PATH
+    if config_path.exists():
+        return _load_and_validate_config(config_path)
+    
+    # No config found anywhere
+    raise FileNotFoundError(
+        "Configuration file not found. Please create one of the following:\n"
+        "  1. " + str(Path.cwd()) + "/gerrit_config.json\n"
+        "  2. " + str(Path.home() / ".config" / "gerrit_config.json") + "\n"
+        "  3. Set environment variable GERRIT_CONFIG_PATH to point to your config file\n"
+        "\nYou can copy \'gerrit_mcp_server/gerrit_config.sample.json\' as a starting point.\n"
+        "Refer to the README.md for more details on the configuration options."
+    )
+
+
+
+def _load_and_validate_config(config_path: Path) -> Dict[str, Any]:
+    """Load and validate configuration from the given path."""
     try:
         with open(config_path, "r") as f:
             config = json.load(f)
@@ -72,7 +104,7 @@ def load_gerrit_config() -> Dict[str, Any]:
                 if not found_match:
                     raise ValueError(
                         f"The default_gerrit_base_url '{default_url}' (normalized to '{normalized_default}') "
-                        "does not match any 'external_url' or 'internal_url' in the 'gerrit_hosts' array. "
+                        f"does not match any 'external_url' or 'internal_url' in the 'gerrit_hosts' array. "
                         f"Please check your configuration file at {config_path}."
                     )
             return config
@@ -82,6 +114,8 @@ def load_gerrit_config() -> Dict[str, Any]:
             file=sys.stderr,
         )
         raise e
+
+
 
 
 try:
@@ -170,7 +204,7 @@ async def run_curl(args: List[str], gerrit_base_url: str) -> str:
     config = load_gerrit_config()
     command = get_curl_command_for_gerrit_url(gerrit_base_url, config) + args
     with open(LOG_FILE_PATH, "a") as log_file:
-        log_file.write(f"[gerrit-mcp-server] Executing: {" ".join(command)}\n")
+        log_file.write(f"[gerrit-mcp-server] Executing: {' '.join(command)}\n")
 
     process = await asyncio.create_subprocess_exec(
         *command,
@@ -265,7 +299,7 @@ async def query_changes(
     output = f'Found {len(changes)} changes for query "{query}":\n'
     for change in changes:
         wip_prefix = "[WIP] " if change.get("work_in_progress") else ""
-        output += f"- {change["_number"]}: {wip_prefix}{change["subject"]}\n"
+        output += f"- {change['_number']}: {wip_prefix}{change['subject']}\n"
 
     return [{"type": "text", "text": output}]
 
@@ -1098,7 +1132,7 @@ async def get_most_recent_cl(
     change = changes[0]
     wip_prefix = "[WIP] " if change.get("work_in_progress") else ""
     output = f"Most recent CL for {user}:\n"
-    output += f"- {change["_number"]}: {wip_prefix}{change["subject"]}\n"
+    output += f"- {change['_number']}: {wip_prefix}{change['subject']}\n"
 
     return [{"type": "text", "text": output}]
 
@@ -1214,35 +1248,51 @@ async def post_review_comment(
 
 
 
-def cli_main(argv: List[str]):
+def cli_main(argv: Optional[List[str]] = None):
     """
     The main entry point for the command-line interface.
     This function is responsible for parsing arguments and running the server.
     """
-    # If 'stdio' is an argument, run in stdio mode and bypass HTTP server logic.
+    # If argv is not provided (when used as console script), use sys.argv
+    if argv is None:
+        argv = sys.argv
+    
+    parser = argparse.ArgumentParser(description="Gerrit MCP Server")
+    parser.add_argument(
+        "--config", "-c",
+        type=str,
+        default=None,
+        help="Path to Gerrit configuration file. If not specified, searches in order: "
+             "1. ./gerrit_config.json, 2. ~/.config/gerrit_config.json, "
+             "3. Package default"
+    )
+    parser.add_argument(
+        "--host", type=str, default="localhost", help="Host to bind the server to (HTTP mode only)."
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=6322,
+        help="Port to bind the server to. Defaults to 6322 (HTTP mode only).",
+    )
+    
+    # Parse all args except 'stdio' positional argument
+    temp_argv = [a for a in argv[1:] if a != 'stdio']
+    args = parser.parse_args(temp_argv)
+    
+    # Set config path if provided
+    if args.config:
+        os.environ["GERRIT_CONFIG_PATH"] = args.config
+    
+    # Check mode
     if "stdio" in argv:
+        # Run in STDIO mode
         mcp.run(transport="stdio")
     else:
-        # Otherwise, run as a normal HTTP server.
-        parser = argparse.ArgumentParser(description="Gerrit MCP Server")
-        parser.add_argument(
-            "--host", type=str, default="localhost", help="Host to bind the server to."
-        )
-        parser.add_argument(
-            "--port",
-            type=int,
-            default=6322,
-            help="Port to bind the server to. Defaults to 6322 (close to 'gerrit' in leetspeak).",
-        )
-        args = parser.parse_args(argv[1:])
-
-        # Update the server's settings with the parsed arguments
+        # Run as HTTP server
         mcp.settings.host = args.host
         mcp.settings.port = args.port
-
-        # Run the server using the correct transport
         mcp.run(transport="streamable-http")
-
 
 if __name__ == "__main__":
     cli_main(sys.argv)

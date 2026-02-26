@@ -10,4 +10,12 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
+"""Gerrit MCP Server - An MCP server for interacting with Gerrit code review systems."""
+
+__version__ = "1.0.1"
+__all__ = ["__version__", "cli_main"]
+
+from .main import cli_main  # noqa: F401
+
+
 # limitations under the License.
