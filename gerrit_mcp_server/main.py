@@ -65,7 +65,9 @@ def load_gerrit_config() -> Dict[str, Any]:
     
     # 3. Check user config directory (XDG-compliant)
     config_path = Path.home() / ".config" / "gerrit_config.json"
-    
+    if config_path.exists():
+        return _load_and_validate_config(config_path)
+
     # 4. Fall back to package default
     config_path = CONFIG_FILE_PATH
     if config_path.exists():
